@@ -1,5 +1,5 @@
 ## Pytorch-YOLO
-Developing YOLOv2 codes from scratch with Pytorch. This codes are for CCP Projects of Korea University.
+Developing YOLOv2 codes from scratch with Pytorch. These codes are for CCP Projects of Korea University.
 
 
 ## Authors
