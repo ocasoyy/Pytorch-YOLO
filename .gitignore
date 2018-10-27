@@ -1,0 +1,17 @@
+.idea/
+__pycache__/
+*.pyc
+
+#data/
+#*.tar
+#*.zip
+#*dummy*
+
+selective_search.py
+fashion_data/
+bottleneck/train/*
+bottleneck/validation/*
+output/best-weights*
+dataset_prediction/crops/*
+
+
