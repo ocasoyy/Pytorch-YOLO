@@ -1,22 +1,11 @@
 # Utils
 # Setting
-from __future__ import print_function
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-import numpy as np
+from yolo_config import *
 
 
-
-c = np.array([[1.0], [1.0], [1.0], [1.0], [0.3]])
-a = np.array([[0.5, 0.5, 0.2, 0.2], [0.5, 0.5, 0.1, 0.1], [0.8, 0.8, 0.1, 0.1], [0.79, 0.79, 0.1, 0.1], [0.6, 0.6, 0.2, 0.4]])
-s = np.array([[0.7, 0.1], [0.5, 0.4], [0.4, 0.3], [0.6, 0.1], [0.1, 0.1]])
-
-confidence = torch.from_numpy(c)
-boxes = torch.from_numpy(a)
-class_probs = torch.from_numpy(s)
+# Config
+C = 2
+THRESHOLD = 0.6
 
 
 
@@ -36,9 +25,37 @@ def box_to_corner(box1, box2):
     return b1_x1, b1_x2, b1_y1, b1_y2, b2_x1, b2_x2, b2_y1, b2_y2
 
 
+
 def calculate_bbox_iou(box1, box2):
     """
     2개의 bbox의 IoU를 계산한다.
+    """
+    # corner화 된 좌표를 가져온다.
+    b1_x1, b1_x2, b1_y1, b1_y2, b2_x1, b2_x2, b2_y1, b2_y2 = box_to_corner(box1, box2)
+
+    # get the corrdinates of the intersection rectangle
+    inter_rect_x1 = torch.max(b1_x1, b2_x1)
+    inter_rect_y1 = torch.max(b1_y1, b2_y1)
+    inter_rect_x2 = torch.min(b1_x2, b2_x2)
+    inter_rect_y2 = torch.min(b1_y2, b2_y2)
+
+    # Intersection area
+    inter_area = torch.clamp(inter_rect_x2 - inter_rect_x1, min=0) *\
+                 torch.clamp(inter_rect_y2 - inter_rect_y1, min=0)
+
+    # Union Area
+    b1_area = (b1_x2 - b1_x1) * (b1_y2 - b1_y1)
+    b2_area = (b2_x2 - b2_x1) * (b2_y2 - b2_y1)
+
+    iou = inter_area / (b1_area + b2_area - inter_area)
+
+    return iou
+
+
+
+def calculate_multiple_bbox_iou(box1, box2):
+    """
+    pair-bbox 세트의 IoU를 한 번에 계산한다.
     """
     # corner화 된 좌표를 가져온다.
     b1_x1, b1_x2, b1_y1, b1_y2, b2_x1, b2_x2, b2_y1, b2_y2 = box_to_corner(box1, box2)
@@ -74,11 +91,7 @@ def filter_by_confidence(confidence, boxes, class_probs, threshold=0.6):
     :param threshold: 필터링 threshold
     """
 
-    for i in range(confidence.size(0)):
-        if confidence[i] < threshold:
-            confidence[i] = 0.0
-        else:
-            pass
+    confidence[confidence < threshold] = 0.0
 
     # 아래 2줄로 confidence가 0이 된 bbox 세트는 제거해준다.
     i, _ = torch.unbind(confidence.nonzero(), 1)
@@ -99,18 +112,12 @@ def filter_by_confidence(confidence, boxes, class_probs, threshold=0.6):
 
 
 
-# Config
-C = 2
-THRESHOLD = 0.6
-
-
 def nms(boxes, class_scores, threshold=0.6):
     """
     :param boxes: bbox 좌표, (None, 4)
     :param class_scores: confidence * class_prob_scores, 클래스 별 score, (None, C)
     :param threshold: NMS Threshold
     """
-    classes = torch.tensor(np.arange(C))
 
     for class_number in range(C):
         target = class_scores[..., class_number]
@@ -123,9 +130,7 @@ def nms(boxes, class_scores, threshold=0.6):
         for idx, bbox_max_idx in enumerate(list(sorted_class_index.numpy())):
             # 기준 class_score가 0이라면 비교할 필요가 없다.
             # 아래 threshold 필터링에서 0으로 바뀐 값이기 때문이다.
-            if class_scores[bbox_max_idx, class_number] == 0.0:
-                pass
-            else:
+            if class_scores[bbox_max_idx, class_number] != 0.0:
                 # 0이 아니라면 순서대로 criterion_box로 지정된다.
                 bbox_max = boxes[bbox_max_idx, :]
 
@@ -148,21 +153,21 @@ def nms(boxes, class_scores, threshold=0.6):
     return boxes, class_scores
 
 
-print(confidence, boxes, class_probs)
-boxes, class_scores = filter_by_confidence(confidence, boxes, class_probs, 0.6)
-new_boxes, new_class_scores = nms(boxes, class_scores, 0.6)
-
-
-
-
-
-
-
-
-
-
-
-
+def box_transformation_test():
+    
+    c = np.array([[1.0], [1.0], [1.0], [1.0], [0.3]])
+    a = np.array([[0.5, 0.5, 0.2, 0.2], [0.5, 0.5, 0.1, 0.1], [0.8, 0.8, 0.1, 0.1], [0.79, 0.79, 0.1, 0.1], [0.6, 0.6, 0.2, 0.4]])
+    s = np.array([[0.7, 0.1], [0.5, 0.4], [0.4, 0.3], [0.6, 0.1], [0.1, 0.1]])
+    
+    confidence = torch.from_numpy(c)
+    boxes = torch.from_numpy(a)
+    class_probs = torch.from_numpy(s)
+    
+    print(confidence, boxes, class_probs)
+    boxes, class_scores = filter_by_confidence(confidence, boxes, class_probs, 0.6)
+    new_boxes, new_class_scores = nms(boxes, class_scores, 0.6)
+    print('new_boxes:\n', new_boxes)
+    print('new_class_scores:\n', new_class_scores )
 
 
 

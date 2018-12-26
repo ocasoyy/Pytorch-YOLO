@@ -6,6 +6,7 @@ import itertools, operator
 
 import numpy as np
 import pandas as pd
+import math
 
 from collections import defaultdict
 from copy import deepcopy
@@ -19,24 +20,27 @@ from torch.optim.lr_scheduler import _LRScheduler
 from torch.utils.data import Dataset, DataLoader, ConcatDataset
 
 import torchvision
-import torchvision.datasets as dsets
+from torchvision import datasets
 import torchvision.transforms as transforms
 
 import matplotlib.pyplot as plt
-# from PIL import Image
 # from skimage import transform
 
-# from nltk.corpus import wordnet as wn
 
-# import xml.etree.ElementTree as ET
 
 
 class Config:
     
     def __init__(self):
-        self.NUM_BOX = 5
+        self.NUM_BBOX = 5
         self.NUM_CLASS = 2
         
         self.GRID_H = 13
         self.GRID_W = 13
+        
+        self.BBOX_SIZE = 1 + 4 + self.NUM_CLASS
+
+        self.lambda_coord = 5
+        self.lambda_noobj = 0.5
+        
 

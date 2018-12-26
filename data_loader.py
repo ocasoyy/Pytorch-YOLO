@@ -1,17 +1,6 @@
 # Utils
 # Setting
-from __future__ import print_function
-
-import torch
-from torchvision import transforms, datasets
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-import numpy as np
-
-import os
-import sys
-import glob
+from yolo_config import *
 
 base_path = os.getcwd()
 sys.path.append(base_path)
